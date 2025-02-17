@@ -44,7 +44,7 @@ app.post('/webhook', (req, res) => {
             data: [event_data]
         }, {
             headers: {
-                'Authorization': 'Bearer EAAQcF4xrFJ0BOZBZBlDZBikeMDw4unN8787HzdX0iWUxlDfXDzwZBfjvTw3CctDOH4ZAtHY9N6SaRt63wkawP6YokMNWmOkiJxvl4O4C36o1Be9aoBdmD9maVys0DrpkdT0FYa4M54qRQ779aqfBuGnn9Tja8260i0sT25ADeMrj1OXWvaiNt4TzjgRLFcQPN0AZDZD',
+                'Authorization': `Bearer ${process.env.FACEBOOK_ACCESS_TOKEN}`,
                 'Content-Type': 'application/json'
             }
         })
