@@ -65,4 +65,11 @@ function hash(algorithm, value) {
 const PORT = process.env.PORT || 3000; // Usa a porta do ambiente ou 3000 como fallback
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
+
+// Rota para a raiz (apenas para testar)
+app.get('/', (req, res) => {
+    res.send('Servidor está funcionando!');
 });
+
+
+
