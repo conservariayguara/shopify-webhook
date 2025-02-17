@@ -66,8 +66,8 @@ function hash(algorithm, value) {
     return require('crypto').createHash(algorithm).update(value).digest('hex');
 }
 
-// Inicia o servidor na porta 3000
-const PORT = process.env.PORT || 3000; // Usa a porta do ambiente ou 3000 como fallback
+// Usa a porta do ambiente ou 3000 como fallback (no caso, já usa a variável de ambiente corretamente)
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });
