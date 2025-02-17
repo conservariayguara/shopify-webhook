@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 
 // Rota para receber webhooks do Shopify
 app.post('/webhook', (req, res) => {
-    console.log('Webhook recebido!'); // Confirma que a requisição chegou
+    console.log('Webhook recebido!');
 
     if (!req.body) {
         console.log('Erro: Corpo da requisição vazio.');
@@ -20,17 +20,28 @@ app.post('/webhook', (req, res) => {
     }
 
     const orderData = req.body;
-    console.log('Dados do pedido:', orderData); // Exibe os dados recebidos
+    console.log('Dados do pedido:', orderData);
 
     if (orderData && orderData.customer) {
         console.log('Dados do cliente:', orderData.customer);
+
+        // Capturar o fbclid (se estiver presente na URL de origem)
+        let fbc = null;
+        if (orderData.referring_site && orderData.referring_site.includes('fbclid=')) {
+            const url = new URL(orderData.referring_site);
+            const fbclid = url.searchParams.get('fbclid');
+            if (fbclid) {
+                fbc = `fb.1.${Math.floor(Date.now() / 1000)}.${fbclid}`;
+            }
+        }
 
         const event_data = {
             event_name: 'Purchase',
             event_time: Math.floor(Date.now() / 1000),
             user_data: {
                 em: hash('sha256', orderData.customer.email),
-                ph: hash('sha256', orderData.customer.phone)
+                ph: hash('sha256', orderData.customer.phone),
+                fbc: fbc  // Adiciona o FBC se disponível
             },
             custom_data: {
                 currency: orderData.currency,
@@ -38,7 +49,7 @@ app.post('/webhook', (req, res) => {
             }
         };
 
-        console.log('Dados enviados ao Facebook:', event_data); // Exibe os dados que serão enviados
+        console.log('Dados enviados ao Facebook:', event_data);
 
         axios.post('https://graph.facebook.com/v12.0/1128466078514544/events', {
             data: [event_data]
@@ -66,7 +77,6 @@ function hash(algorithm, value) {
     return require('crypto').createHash(algorithm).update(value).digest('hex');
 }
 
-// Usa a porta do ambiente ou 3000 como fallback (no caso, já usa a variável de ambiente corretamente)
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
