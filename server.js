@@ -1,16 +1,15 @@
 const express = require('express');
 const axios = require('axios');
 const bodyParser = require('body-parser');
+const crypto = require('crypto');
 
 const app = express();
 app.use(bodyParser.json());
 
-// Rota para a raiz (apenas para testar)
 app.get('/', (req, res) => {
     res.send('Servidor está funcionando!');
 });
 
-// Rota para receber webhooks do Shopify
 app.post('/webhook', (req, res) => {
     console.log('Webhook recebido!');
 
@@ -25,7 +24,6 @@ app.post('/webhook', (req, res) => {
     if (orderData && orderData.customer) {
         console.log('Dados do cliente:', orderData.customer);
 
-        // Capturar o fbclid (se estiver presente na URL de origem)
         let fbc = null;
         if (orderData.referring_site && orderData.referring_site.includes('fbclid=')) {
             const url = new URL(orderData.referring_site);
@@ -35,13 +33,17 @@ app.post('/webhook', (req, res) => {
             }
         }
 
+        // Criando um event_id único baseado no ID do pedido
+        const event_id = `order_${orderData.id}`;
+
         const event_data = {
             event_name: 'Purchase',
             event_time: Math.floor(Date.now() / 1000),
+            event_id: event_id,  // Adicionando o event_id para deduplicação
             user_data: {
                 em: hash('sha256', orderData.customer.email),
                 ph: hash('sha256', orderData.customer.phone),
-                fbc: fbc  // Adiciona o FBC se disponível
+                fbc: fbc
             },
             custom_data: {
                 currency: orderData.currency,
@@ -51,7 +53,7 @@ app.post('/webhook', (req, res) => {
 
         console.log('Dados enviados ao Facebook:', event_data);
 
-        axios.post('https://graph.facebook.com/v12.0/1128466078514544/events', {
+        axios.post(`https://graph.facebook.com/v12.0/${process.env.FACEBOOK_PIXEL_ID}/events`, {
             data: [event_data]
         }, {
             headers: {
@@ -63,7 +65,7 @@ app.post('/webhook', (req, res) => {
             console.log('Resposta do Facebook:', response.data);
         })
         .catch(error => {
-            console.error('Erro ao enviar dados:', error.response.data);
+            console.error('Erro ao enviar dados:', error.response?.data || error.message);
         });
     } else {
         console.log('Erro: Dados do cliente não encontrados.');
@@ -72,9 +74,8 @@ app.post('/webhook', (req, res) => {
     res.status(200).send('Webhook recebido com sucesso!');
 });
 
-// Função para gerar hash SHA-256
 function hash(algorithm, value) {
-    return require('crypto').createHash(algorithm).update(value).digest('hex');
+    return crypto.createHash(algorithm).update(value).digest('hex');
 }
 
 const PORT = process.env.PORT || 10000;
